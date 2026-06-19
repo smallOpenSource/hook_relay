@@ -1,0 +1,44 @@
+# ── secrets / env (절대 커밋 금지) ──
+hook_relay.env
+*.env
+!*.env.example
+
+# ── 라우팅 데이터 (실 채널/chat_id = 개인정보) → 예시만 commit: channels.csv.example ──
+/channels.csv
+
+# ── TLS 인증서 / 개인키 (절대 커밋 금지) ──
+ssl/
+
+# ── python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ruff_cache/
+.pytest_cache/
+.mypy_cache/
+
+# ── node (해당 시) ──
+node_modules/
+
+# ── OMC / 세션 상태 / 핸드오프 (비밀 포함 가능) ──
+.omc/
+.remember/
+.claude/
+
+# ── 작업 스크래치 (스크린샷 등) ──
+work/
+
+# ── 로그 ──
+*.log
+
+# ── settings 백업 ──
+*.bak.*
+
+# ── OS / editor ──
+.DS_Store
+*.swp
+*.swo
+*~

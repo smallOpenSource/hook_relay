@@ -1,0 +1,15 @@
+app,username,channel
+# hook_relay 라우팅 매핑 예시 — 이 파일을 channels.csv 로 복사해 실값으로 채운다.
+#   cp channels.csv.example channels.csv
+#
+# 컬럼:
+#   app      = slack | telegram | discord  (발송 플랫폼 선택자)
+#   username = 후크가 보내는 사용자 키 (클라이언트 NOTIFY_USER 와 일치)
+#   channel  = slack:  #채널명 또는 채널ID
+#              telegram: chat_id (개인 DM=양수 / 그룹·채널=-100… 음수)
+#              discord:  channel_id (17~19자리 snowflake)
+#
+# 예시 (주석 해제 후 값 교체):
+# slack,alice,#alerts
+# telegram,alice,123456789
+# discord,alice,123456789012345678
