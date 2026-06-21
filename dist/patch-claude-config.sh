@@ -45,7 +45,7 @@ jq \
   | .hooks = (.hooks // {})
   | .hooks.Stop = [ { hooks: [ { type: "command", command: $cmd, async: true } ] } ]
   | .hooks.Notification = [ {
-      matcher: "idle_prompt|permission_prompt",
+      matcher: "idle_prompt|permission_prompt|elicitation_dialog",
       hooks: [ { type: "command", command: $cmd, async: true } ]
     } ]
   ' "$SETTINGS" > "$tmp"

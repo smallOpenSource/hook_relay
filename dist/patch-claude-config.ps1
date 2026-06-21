@@ -41,7 +41,7 @@ if ($env:NOTIFY_USER) { $cfg['env']['NOTIFY_USER'] = $env:NOTIFY_USER }
 $cmd  = 'powershell -NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $hookPath
 $cfg['hooks'] = @{
   Stop         = @(@{ hooks = @(@{ type = 'command'; command = $cmd; async = $true }) })
-  Notification = @(@{ matcher = 'idle_prompt|permission_prompt'; hooks = @(@{ type = 'command'; command = $cmd; async = $true }) })
+  Notification = @(@{ matcher = 'idle_prompt|permission_prompt|elicitation_dialog'; hooks = @(@{ type = 'command'; command = $cmd; async = $true }) })
 }
 
 $cfg | ConvertTo-Json -Depth 20 | Set-Content -Encoding UTF8 $settings

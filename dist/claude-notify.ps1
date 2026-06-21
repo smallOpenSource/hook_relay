@@ -1,6 +1,6 @@
 # Claude Code hook -> hook_relay (slack / telegram / discord) — Windows PowerShell
 #
-# stdin : Claude Code hook JSON (Stop / Notification)
+# stdin : Claude Code hook JSON (Stop / SubagentStop / Notification)
 # 의존  : PowerShell 5+ (Invoke-RestMethod, ConvertFrom-Json 내장)
 #
 # 환경변수
@@ -10,6 +10,9 @@
 #   NOTIFY_USER     (선택) (app,username)->channel 매핑 키.  기본 $env:USERNAME.
 #   NOTIFY_ACCOUNT  (선택) 구독 계정 직접 지정. 미지정 시
 #                   %USERPROFILE%\.claude.json 의 oauthAccount.emailAddress 사용.
+#   NOTIFY_DEBUG    (선택) =1 이면 후크 원본 JSON 을 NOTIFY_DEBUG_LOG 에 적재
+#                   (기본 %USERPROFILE%\.claude\logs\notify-debug.jsonl). 묵음 이벤트도 기록.
+#   NOTIFY_DRYRUN   (선택) =1 이면 발송하지 않고 결정된 status 만 출력(테스트용).
 
 $ErrorActionPreference = 'Stop'
 
@@ -24,23 +27,50 @@ $raw  = [Console]::In.ReadToEnd()
 $hook = $null
 if (-not [string]::IsNullOrWhiteSpace($raw)) { try { $hook = $raw | ConvertFrom-Json } catch { $hook = $null } }
 
-$sessionId = if ($hook -and $hook.session_id)      { $hook.session_id }      else { '' }
-$cwd       = if ($hook -and $hook.cwd)             { $hook.cwd }             else { '' }
-$event     = if ($hook -and $hook.hook_event_name) { $hook.hook_event_name } else { '' }
-$transcriptPath = if ($hook -and $hook.transcript_path) { $hook.transcript_path } else { '' }
+$sessionId      = if ($hook -and $hook.session_id)      { $hook.session_id }      else { '' }
+$cwd            = if ($hook -and $hook.cwd)             { $hook.cwd }             else { '' }
+$event          = if ($hook -and $hook.hook_event_name){ $hook.hook_event_name } else { '' }
+$transcriptPath = if ($hook -and $hook.transcript_path){ $hook.transcript_path } else { '' }
+$agentId        = if ($hook -and $hook.agent_id)       { [string]$hook.agent_id }   else { '' }   # 서브에이전트 컨텍스트에서만 채워짐
+$agentType      = if ($hook -and $hook.agent_type)     { [string]$hook.agent_type } else { '' }
+$stopActive     = if ($hook -and $hook.stop_hook_active) { [bool]$hook.stop_hook_active } else { $false }
+$ntype          = if ($hook -and $hook.notification_type) { [string]$hook.notification_type } else { '' }
 
-# -- 상태 매핑 --
+# -- 디버그 캡처(옵션): 묵음 포함 모든 이벤트의 원본 JSON 적재 --
+if ($env:NOTIFY_DEBUG -eq '1') {
+  $dbg = if ($env:NOTIFY_DEBUG_LOG) { $env:NOTIFY_DEBUG_LOG } else { Join-Path $env:USERPROFILE '.claude\logs\notify-debug.jsonl' }
+  try { New-Item -ItemType Directory -Force -Path (Split-Path $dbg) | Out-Null; Add-Content -Path $dbg -Value $raw } catch {}
+}
+
+# -- 상태 매핑: "메인 세션의 실제 상태"만 보고 --
+#   Stop         : 메인 세션 최종 완료만 알림 (agent_id/agent_type 있으면 서브·팀원 → 묵음,
+#                  stop_hook_active=true 면 자율 루프 진행중 → 묵음)
+#   SubagentStop : 서브에이전트 완료 → 항상 묵음
+#   Notification : elicitation_dialog/permission_prompt → 선택지 대기, idle_prompt → 입력 대기, 그 외 묵음
+$status = $null
 switch ($event) {
-  'Stop'         { $status = 'task_complete' }
-  'Notification' { $status = 'awaiting_input' }
-  default        { $status = $event }
+  'Stop' {
+    if ($agentId -or $agentType) { exit 0 }
+    if ($stopActive)             { exit 0 }
+    $status = 'task_complete'
+  }
+  'SubagentStop' { exit 0 }
+  'Notification' {
+    switch ($ntype) {
+      'elicitation_dialog' { $status = 'awaiting_choice' }
+      'permission_prompt'  { $status = 'awaiting_choice' }
+      'idle_prompt'        { $status = 'awaiting_input' }
+      default              { exit 0 }
+    }
+  }
+  default { exit 0 }
 }
 
 # -- 세션 이름: /rename 값(transcript) > 캐시 > session_id --
 $sessionName = ''
 if ($transcriptPath -and (Test-Path $transcriptPath)) {
   foreach ($ln in [System.IO.File]::ReadLines($transcriptPath)) {
-    if ($ln -notlike '*local_command*') { continue }
+    if ($ln -notlike '*Session renamed to:*') { continue }
     try { $o = $ln | ConvertFrom-Json } catch { continue }
     if ($o.type -eq 'system' -and $o.content -match 'Session renamed to: (.+?)(?:<|$)') {
       $sessionName = $matches[1].Trim()
@@ -62,6 +92,12 @@ if ([string]::IsNullOrEmpty($account)) {
   }
 }
 if ($null -eq $account) { $account = '' }
+
+# -- DRYRUN: 발송 대신 결정 결과만 출력 --
+if ($env:NOTIFY_DRYRUN -eq '1') {
+  Write-Host "SEND status=$status event=$event ntype=$ntype app=$app user=$userKey session=$sessionName"
+  exit 0
+}
 
 # -- 페이로드 구성 + 발송 --
 $payload = @{

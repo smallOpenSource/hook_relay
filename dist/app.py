@@ -32,7 +32,11 @@ HOOK_RELAY_ROLE = os.environ.get("HOOK_RELAY_ROLE", "api")
 
 APPS = ("slack", "telegram", "discord")
 FIELDS = ["app", "username", "channel"]
-STATUS_LABEL = {"task_complete": "작업 완료", "awaiting_input": "선택지 대기"}
+STATUS_LABEL = {
+    "task_complete": "작업 완료",
+    "awaiting_choice": "선택지 대기",
+    "awaiting_input": "입력 대기",
+}
 
 _lock = threading.Lock()
 app = FastAPI()
@@ -229,10 +233,10 @@ def build_text(p):
     return "\n".join(
         [
             "[{}]".format(status),
-            "{} ({})".format(p.get("hostname", ""), p.get("username", "")),
-            "session: " + str(p.get("session_name", "")),
-            "path: " + str(p.get("project_path", "")),
-            "account: " + account,
+            "- session:" + str(p.get("session_name", "")),
+            "- path: " + str(p.get("project_path", "")),
+            "- host:{}({})".format(p.get("hostname", ""), p.get("username", "")),
+            "- account:" + account,
         ]
     )
 
