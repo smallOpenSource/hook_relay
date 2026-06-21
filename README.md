@@ -129,6 +129,8 @@ cp dist/claude-notify.sh ~/.claude/hooks/ && chmod +x ~/.claude/hooks/claude-not
 NOTIFY_API_URL='http://<서버>:20000' NOTIFY_APP='slack' NOTIFY_USER='<사용자>' bash dist/patch-claude-config.sh
 ```
 
+> **업데이트(이미 설치한 클라이언트)**: 후크 스크립트·`settings.json` 매처는 **클라이언트측**이라, 동작 변경(메인/서브 구분·선택지/입력 분류 등)을 반영하려면 위 설치 명령을 **다시 실행**해야 한다(멱등 — 스크립트 덮어쓰기 + 매처 교체, `settings.json` 자동 백업). 실행 중 세션은 재시작. 메시지 표시 포맷·라벨은 서버가 만들어 **자동 반영**된다. OS별 원라이너·웹 가이드 안내는 [`dist/GUIDE.md`](dist/GUIDE.md)의 "♻️ 업데이트" 절 참고.
+
 후크는 `transcript_path`에서 `/rename` 세션 이름을 추출해 `session: <이름>`으로 함께 보낸다(없으면 세션 ID).
 
 > 후크가 **메인 세션 vs 서브에이전트/팀원**·**완료 vs 선택지/입력 대기**를 어떻게 구분해 `status`를 정하는지(+진단·무발송 검증)는 [`docs/notification-semantics-and-hook-events.md`](docs/notification-semantics-and-hook-events.md) 참고.

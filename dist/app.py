@@ -1501,6 +1501,7 @@ UI_HTML = r"""<!doctype html>
     <div class="os-panel" data-os="win"><p class="step">PowerShell에서 실행 (Windows 기본 내장)</p><div class="code"><button class="copy" type="button">복사</button><pre data-cmd="win"></pre></div></div>
     <div class="os-panel" data-os="mac"><p class="step">터미널에서 실행 · jq 필요</p><div class="code"><button class="copy" type="button">복사</button><pre data-cmd="mac"></pre></div></div>
     <div class="os-panel" data-os="linux"><p class="step">터미널에서 실행 · jq 필요</p><div class="code"><button class="copy" type="button">복사</button><pre data-cmd="linux"></pre></div></div>
+    <p class="guide-foot">&#9851; <b>이미 설치하셨나요?</b> 위 명령을 <b>그대로 다시 실행</b>하면 최신 후크로 갱신됩니다 — 서버에서 내려받아 덮어쓰고, <code>settings.json</code>은 백업 후 매처만 교체(<b>멱등</b>). 동작 변경을 반영하려면 실행 중인 Claude Code 세션을 <b>재시작</b>하세요. <i>(메시지 표시 포맷은 서버가 만들어 자동 반영됩니다.)</i></p>
     <p class="guide-foot">설치 후 Claude Code(CLI)에서 작업을 끝내면 알림이 옵니다. 채널을 처음 연결하는 <b>운영자</b>는 아래 <b>봇 토큰 발급</b>을 펼쳐 보세요. 문제해결·환경변수 등 추가 레퍼런스는 배포본 <b>dist/GUIDE.md</b>에 있습니다.</p>
     <details class="tok">
       <summary>봇 토큰 발급 (운영자 전용) — Slack · Telegram · Discord</summary>

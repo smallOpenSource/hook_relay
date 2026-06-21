@@ -105,6 +105,36 @@ NOTIFY_API_URL='http://relay.example.com:20000' NOTIFY_APP='slack' NOTIFY_USER='
 패치 스크립트는 `~/.claude/settings.json`을 **백업(`*.bak.<시각>`) 후** `.hooks.Stop`·`.hooks.Notification`과
 `.env`(NOTIFY_API_URL/APP/USER)를 병합하고, 구독 계정(`~/.claude.json`의 이메일)을 확인합니다.
 
+### ♻️ 업데이트 — 이미 설치한 사용자 (최근 변경 반영)
+
+후크 **동작**이 바뀌면(예: 메인/서브에이전트 구분, 선택지·입력 대기 분류) **각 PC에서 다시 적용**해야 합니다 —
+판정 로직은 클라이언트의 `claude-notify*` 스크립트에, Notification 매처는 `settings.json`에 있기 때문입니다.
+*(알림 메시지의 표시 포맷·라벨은 **서버**가 만들어 자동 반영되므로, 그것만 바뀐 경우엔 재설치가 필요 없습니다.)*
+
+**방법 = 위 [2. 설치](#2-설치-os-선택) 명령을 그대로 다시 실행.** 후크 스크립트는 덮어써지고, 패치는
+`settings.json`을 백업한 뒤 `.hooks.Stop`·`.hooks.Notification` 매처를 최신값으로 교체합니다 — **멱등(여러 번 실행해도 안전)**.
+한 줄 버전(`dist/` 안에서 `<나>`만 바꿔 실행):
+
+```bash
+# Linux
+cp claude-notify.sh ~/.claude/hooks/ && chmod +x ~/.claude/hooks/claude-notify.sh && \
+  NOTIFY_API_URL='http://relay.example.com:20000' NOTIFY_APP='slack' NOTIFY_USER='<나>' bash patch-claude-config.sh
+# macOS
+cp claude-notify-mac.sh ~/.claude/hooks/ && chmod +x ~/.claude/hooks/claude-notify-mac.sh && \
+  NOTIFY_API_URL='http://relay.example.com:20000' NOTIFY_APP='slack' NOTIFY_USER='<나>' bash patch-claude-config-mac.sh
+```
+
+```powershell
+# Windows (PowerShell)
+Copy-Item .\claude-notify.ps1 "$env:USERPROFILE\.claude\hooks\claude-notify.ps1" -Force
+$env:NOTIFY_API_URL='http://relay.example.com:20000'; $env:NOTIFY_APP='slack'; $env:NOTIFY_USER='<나>'
+powershell -NoProfile -ExecutionPolicy Bypass -File .\patch-claude-config.ps1
+```
+
+> 📁 `dist/` 폴더가 오래됐다면 **먼저 최신 `dist/`를 받으세요**(레포 `git pull` 또는 dist 재다운로드) — 그래야 최신 스크립트를 복사합니다.
+> 🌐 웹 UI의 **"설치 가이드"** 복붙 명령은 **서버에서 직접 최신 스크립트를 내려받으므로**, 그대로 다시 실행만 하면 항상 최신본입니다.
+> ⚠️ **반영 시점**: 후크 스크립트는 다음 이벤트부터 즉시 적용되지만, `settings.json` 매처는 **새 Claude Code 세션부터** 반영됩니다 — 실행 중인 세션은 **재시작**하세요.
+
 ---
 
 ## 3. 검증 (③)
