@@ -1313,6 +1313,8 @@ UI_HTML = r"""<!doctype html>
   .modal input{width:100%; margin-bottom:12px}
   .modal-err{color:var(--danger); font-family:var(--f-label); font-size:12px; min-height:15px; margin:0 0 12px; letter-spacing:.03em}
   .modal-row{display:flex; gap:10px} .modal-row .btn{flex:1; text-align:center}
+  .modal .field{margin-bottom:13px}
+  .modal .field input,.modal .field select{margin-bottom:0}
   button.pill.auth{font-family:var(--f-label); font-size:12px; cursor:pointer}
 
   .guide-overlay{z-index:120; align-items:flex-start; overflow:auto; padding:5vh 18px}
@@ -1442,24 +1444,13 @@ UI_HTML = r"""<!doctype html>
     </select>
     <input id="fUser" placeholder="username 검색…" aria-label="username 검색">
     <button class="btn" id="refresh">새로고침</button>
+    <button class="btn primary" id="openAdd">+ 새 라우트</button>
   </div>
 
   <div id="msg" class="msg" role="status" aria-live="polite"></div>
 
   <section class="board" id="board"></section>
 
-  <section class="patch" id="patch">
-    <h2><span class="plus">+</span> 새 라우트 연결</h2>
-    <p class="hint">기존 라우트 수정은 각 행의 “수정” 버튼으로 그 자리에서 합니다.</p>
-    <div class="grid">
-      <div class="field"><label for="nApp">app</label>
-        <select id="nApp"><option value="slack">slack</option><option value="telegram">telegram</option><option value="discord">discord</option></select>
-      </div>
-      <div class="field"><label for="nUser">username</label><input id="nUser" placeholder="minsu"></div>
-      <div class="field"><label for="nChan">channel</label><input id="nChan" placeholder="#room · chat_id · channel_id"></div>
-      <button class="btn primary" id="add">연결 &#9656;</button>
-    </div>
-  </section>
 
   <footer>hook_relay · Claude Code &#8594; slack / telegram / discord</footer>
 </main>
@@ -1476,6 +1467,21 @@ UI_HTML = r"""<!doctype html>
   </form>
 </div>
 
+<div class="modal-overlay" id="addModal" role="dialog" aria-modal="true" aria-label="새 라우트 연결">
+  <form class="modal" id="addForm">
+    <div class="lock"><span style="width:8px;height:8px;background:var(--amber);display:inline-block"></span> new route &#183; channel</div>
+    <h3>새 라우트</h3>
+    <p>app &#9656; username &#9472;&#9472;&#9656; channel</p>
+    <div class="field"><label for="nApp">app</label>
+      <select id="nApp"><option value="slack">slack</option><option value="telegram">telegram</option><option value="discord">discord</option></select>
+    </div>
+    <div class="field"><label for="nUser">username</label><input id="nUser" placeholder="minsu" autocomplete="off" spellcheck="false"></div>
+    <div class="field"><label for="nChan">channel</label><input id="nChan" placeholder="#room &#183; chat_id &#183; channel_id" autocomplete="off" spellcheck="false"></div>
+    <div class="modal-err" id="addErr" role="alert"></div>
+    <div class="modal-row"><button class="btn" type="button" id="addCancel">취소</button><button class="btn primary" type="submit" id="addGo">연결 &#9656;</button></div>
+  </form>
+</div>
+
 <div class="modal-overlay guide-overlay" id="guide" role="dialog" aria-modal="true" aria-label="클라이언트 설치 가이드">
   <div class="guide-card">
     <div class="guide-head">
@@ -1485,7 +1491,7 @@ UI_HTML = r"""<!doctype html>
       </div>
       <button class="btn" id="guideClose" type="button">닫기</button>
     </div>
-    <p class="guide-intro">내 Claude Code 작업 알림(작업완료·입력대기)을 Slack/Telegram/Discord로 받습니다. OS를 고르고 명령을 복사해 실행하세요. 알림이 가려면 아래 보드(또는 운영자)에 <b>내 username &#9656; 채널</b> 매핑이 있어야 합니다.</p>
+    <p class="guide-intro">내 Claude Code 작업 알림(작업완료·선택지대기·입력대기)을 Slack/Telegram/Discord로 받습니다. OS를 고르고 명령을 복사해 실행하세요. 알림이 가려면 아래 보드(또는 운영자)에 <b>내 username &#9656; 채널</b> 매핑이 있어야 합니다.</p>
     <label class="guide-field"><span>내 username</span><input id="guideUser" placeholder="minsu" autocomplete="off" spellcheck="false" aria-label="내 username"></label>
     <div class="os-tabs" role="tablist" aria-label="운영체제 선택">
       <button class="os-tab" type="button" data-os="win" role="tab">Windows</button>
@@ -1601,7 +1607,7 @@ curl "https://api.telegram.org/bot&lt;토큰&gt;/getWebhookInfo"</pre></div>
     $('#count').textContent = rows.length + ' route' + (rows.length===1?'':'s');
     if(editing && !rows.some(r=>K(r.app,r.username)===editing)) editing=null;
     const board=$('#board');
-    if(rows.length===0){ board.innerHTML='<div class="empty"><span class="empty-mark">&#8651;</span>아직 라우트가 없습니다.<br>아래 패치 패널에서 첫 신호 경로를 연결하세요.</div>'; return; }
+    if(rows.length===0){ board.innerHTML='<div class="empty"><span class="empty-mark">&#8651;</span>아직 라우트가 없습니다.<br>위 <b>+ 새 라우트</b> 버튼으로 첫 신호 경로를 연결하세요.</div>'; return; }
     board.innerHTML = rows.map((r,i)=>{
       const e = editing===K(r.app,r.username);
       const chan = e ? '<input class="chan-edit" id="chanEdit" value="'+esc(r.channel)+'" aria-label="channel 값 수정" spellcheck="false" autocomplete="off">' : '<span class="chan">'+esc(r.channel)+'</span>';
@@ -1628,15 +1634,18 @@ curl "https://api.telegram.org/bot&lt;토큰&gt;/getWebhookInfo"</pre></div>
       editing=null; show('수정했습니다.','good'); load();
     }catch(e){ show('요청에 실패했습니다.'); }
   }
+  function openAdd(){ const e=$('#addErr'); if(e) e.textContent=''; $('#nUser').value=''; $('#nChan').value=''; $('#addModal').classList.add('show'); setTimeout(()=>{ const i=$('#nUser'); if(i) i.focus(); },60); }
+  function closeAdd(){ $('#addModal').classList.remove('show'); }
   async function add(){
+    const errEl=$('#addErr'); if(errEl) errEl.textContent='';
     const body={ app:$('#nApp').value, username:$('#nUser').value.trim(), channel:$('#nChan').value.trim() };
-    if(!body.username||!body.channel){ show('username과 channel을 입력하세요.'); return; }
+    if(!body.username||!body.channel){ if(errEl) errEl.textContent='username과 channel을 입력하세요.'; return; }
     try{
       const res=await fetch('/channels',{method:'POST',headers:authH({'Content-Type':'application/json'}),body:JSON.stringify(body)});
-      if(res.status===401){ openLogin(); return; }
-      if(!res.ok){ show(await detail(res)); return; }
-      $('#nUser').value=''; $('#nChan').value=''; show('연결했습니다.','good'); load();
-    }catch(e){ show('요청에 실패했습니다.'); }
+      if(res.status===401){ closeAdd(); openLogin(); return; }
+      if(!res.ok){ if(errEl) errEl.textContent=await detail(res); return; }
+      closeAdd(); show('연결했습니다.','good'); load();
+    }catch(e){ if(errEl) errEl.textContent='요청에 실패했습니다.'; }
   }
   async function del(a,u){
     if(!confirm(u+' ('+a+') 라우트를 끊을까요?')) return;
@@ -1666,7 +1675,11 @@ curl "https://api.telegram.org/bot&lt;토큰&gt;/getWebhookInfo"</pre></div>
   });
   $('#loginForm').addEventListener('submit', e=>{ e.preventDefault(); submitLogin(); });
   $('#logoutBtn').addEventListener('click', logout);
-  $('#add').addEventListener('click', add);
+  $('#openAdd').addEventListener('click', openAdd);
+  $('#addCancel').addEventListener('click', closeAdd);
+  $('#addForm').addEventListener('submit', e=>{ e.preventDefault(); add(); });
+  $('#addModal').addEventListener('click', e=>{ if(e.target===$('#addModal')) closeAdd(); });
+  document.addEventListener('keydown', e=>{ if(e.key==='Escape' && $('#addModal').classList.contains('show')) closeAdd(); });
   $('#refresh').addEventListener('click', load);
   $('#fApp').addEventListener('change', load);
   $('#fUser').addEventListener('keydown', e=>{ if(e.key==='Enter') load(); });

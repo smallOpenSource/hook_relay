@@ -146,7 +146,7 @@ Invoke-RestMethod -Method Post -Uri http://relay.example.com:20000/notify -Conte
 |---|---|
 | `/health` 실패 | 서버 미도달 — 사내망/VPN/방화벽 확인 |
 | 알림이 전혀 안 옴 | ① 매핑 없음(404) → 1번에서 등록 ② `NOTIFY_USER`가 매핑과 다름 ③ (Slack) 봇이 채널에 미초대 |
-| **작업완료(Stop)는 오는데 입력대기(Notification)는 안 옴** | 정상 — Notification 은 **CLI에서만** 발화합니다(VSCode/IDE 확장 버그). |
+| **작업완료(Stop)는 오는데 입력대기·선택지대기(Notification)는 안 옴** | 정상 — Notification 은 **CLI에서만** 발화합니다(VSCode/IDE 확장 버그). |
 | `jq 가 필요합니다` | macOS `brew install jq` / Linux `sudo dnf install -y jq` (또는 apt) |
 | Windows 실행 차단 | 명령에 `-ExecutionPolicy Bypass` 가 이미 포함돼 있습니다. 회사 정책상 막히면 관리자 문의 |
 | 원래대로 되돌리기 | `~/.claude/settings.json.bak.<시각>` 를 `settings.json` 으로 복원 |

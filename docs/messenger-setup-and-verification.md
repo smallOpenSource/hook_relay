@@ -26,15 +26,16 @@
 
 `build_text(p)`가 본문 문자열을 **한 번** 만들고, `notify`가 그 결과를 `SENDERS[app]`에 그대로 넘긴다
 → **세 플랫폼 본문은 바이트 단위로 동일**하다.
+상태값 자체는 클라이언트 후크(`claude-notify.sh`)가 정한다 — 메인 세션 최종 `Stop`만 `task_complete`; 서브에이전트/팀원 완료·자율 루프 중 `Stop`·`SubagentStop`은 발송 안 함; `Notification`은 종류별 선택지 대기/입력 대기. 상세 = `../dist/README.md` 상태 매핑.
 
 현재 포맷:
 
 ```
-[<상태>]                     ← STATUS_LABEL: task_complete=작업 완료 / awaiting_input=선택지 대기
-<hostname> (<username>)
-session: <세션명>            ← /rename 값(클라 후크가 transcript의 "Session renamed to:" system 항목에서 추출)
-path: <project_path>
-account: <계정 @앞부분>       ← str(claude_account).split("@")[0]
+[<상태>]                     ← STATUS_LABEL: task_complete=작업 완료 / awaiting_choice=선택지 대기 / awaiting_input=입력 대기
+- session:<세션명>            ← /rename 값(클라 후크가 transcript의 "Session renamed to:" system 항목에서 추출)
+- path: <project_path>
+- host:<hostname>(<username>)
+- account:<계정 @앞부분>       ← str(claude_account).split("@")[0]
 ```
 
 ### 렌더링 차이(같은 텍스트, 다른 해석) — 중요
@@ -49,8 +50,8 @@ account: <계정 @앞부분>       ← str(claude_account).split("@")[0]
 **단, 동적 필드(세션명·path)에 그런 문자가 들어가면 Slack/Discord만 서식이 먹고 Telegram은 글자 그대로** 나온다.
 완전 동일 렌더를 못박으려면 Slack을 `mrkdwn=false`로 보내면 된다(현재 미적용).
 
-> ★ **회귀 주의**: 이 포맷(상태 라벨 **독립 줄** · `time:` 줄 **없음** · account **`@` 앞부분만**)은
-> 사용자가 명시적으로 고른 것이다. 임의로 타임스탬프나 풀 이메일을 복원하지 말 것.
+> ★ **회귀 주의**: 이 포맷(상태 라벨 **독립 줄** · 이후 **불릿 4줄**(session·path·host·account) · `time:` 줄 **없음** · account **`@` 앞부분만**)은
+> 사용자가 명시적으로 고른 것이다. 임의로 타임스탬프·풀 이메일·옛 배열을 복원하지 말 것.
 
 ---
 
@@ -140,7 +141,7 @@ PY
 
 | 심볼 | app.py 위치(약) | 역할 |
 |---|---|---|
-| `APPS` / `STATUS_LABEL` | 33 / 35 | 플랫폼 화이트리스트 · 상태 라벨(작업 완료/선택지 대기) |
+| `APPS` / `STATUS_LABEL` | 33 / 35 | 플랫폼 화이트리스트 · 상태 라벨(작업 완료/선택지 대기/입력 대기) |
 | `lookup_channel` | 160 | `channels.csv` `(app,username)→channel` 조회 |
 | `send_slack` / `send_telegram` / `send_discord` | 179 / 195 / 210 | 플랫폼 전송(Bearer / `bot<token>` URL / `Bot ` 헤더) |
 | `SENDERS` | 223 | `app → sender` 매핑 |
