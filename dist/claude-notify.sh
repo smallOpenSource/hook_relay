@@ -40,6 +40,10 @@ if [[ "${NOTIFY_DEBUG:-}" == "1" ]]; then
   printf '%s\n' "$INPUT" >> "$dbg" 2>/dev/null || true
 fi
 
+# -- OMC 팀 워커 세션(orchestration 내부 워커)은 사용자에게 알리지 않음 --
+#    OMC가 워커 세션 환경에만 OMC_TEAM_WORKER 를 주입한다. 메인/대화형 세션엔 없으므로 메인 완료는 영향 없음.
+[[ -n "${OMC_TEAM_WORKER:-}${OMX_TEAM_WORKER:-}" ]] && exit 0
+
 # -- 상태 매핑: "메인 세션의 실제 상태"만 보고 --
 #   Stop         : 메인 세션 최종 완료만 알림
 #                  · agent_id/agent_type 있음(서브에이전트·팀원) → 묵음 (메인 아님)

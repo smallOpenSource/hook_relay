@@ -42,6 +42,9 @@ if ($env:NOTIFY_DEBUG -eq '1') {
   try { New-Item -ItemType Directory -Force -Path (Split-Path $dbg) | Out-Null; Add-Content -Path $dbg -Value $raw } catch {}
 }
 
+# -- OMC 팀 워커 세션(orchestration 내부 워커)은 사용자에게 알리지 않음 (메인 완료엔 영향 없음) --
+if ($env:OMC_TEAM_WORKER -or $env:OMX_TEAM_WORKER) { exit 0 }
+
 # -- 상태 매핑: "메인 세션의 실제 상태"만 보고 --
 #   Stop         : 메인 세션 최종 완료만 알림 (agent_id/agent_type 있으면 서브·팀원 → 묵음,
 #                  stop_hook_active=true 면 자율 루프 진행중 → 묵음)

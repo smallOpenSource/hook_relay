@@ -146,6 +146,6 @@ NOTIFY_API_URL='http://<서버>:20000' NOTIFY_APP='slack' NOTIFY_USER='minsu' ba
 | `Notification` | `elicitation_dialog`·`permission_prompt`(사용자 결정 대기) | `awaiting_choice` | ❓ 선택지 대기 |
 | `Notification` | `idle_prompt`(유휴) | `awaiting_input` | ⏳ 입력 대기 |
 
-> 서브에이전트/팀원 완료와 자율 루프(autopilot/ralph 등) 중간 `Stop`은 **메인 세션의 완료가 아니므로 보내지 않는다**. 유휴(`idle_prompt`)는 "입력 대기", 실제 사용자 결정 대기(plan 승인·권한 `elicitation_dialog`/`permission_prompt`)는 "선택지 대기"로 구분된다.
+> 서브에이전트/팀원 완료와 자율 루프(autopilot/ralph 등) 중간 `Stop`은 **메인 세션의 완료가 아니므로 보내지 않는다**. 유휴(`idle_prompt`)는 "입력 대기", 실제 사용자 결정 대기(plan 승인·권한 `elicitation_dialog`/`permission_prompt`)는 "선택지 대기"로 구분된다. 또한 **orchestration 워커 세션(`OMC_TEAM_WORKER`/`OMX_TEAM_WORKER` 환경변수 존재)은 발송하지 않는다** — 메인 세션 완료엔 영향 없음.
 
 > **세션 이름**: 후크는 `transcript_path` 에서 `/rename` 으로 지정한 세션 이름을 추출해 `session: <이름>` 으로 전송한다(없으면 세션 ID 사용).

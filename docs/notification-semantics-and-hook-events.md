@@ -58,6 +58,7 @@ Notification:
 - **서브/팀원 억제**는 `agent_id` 가드로 한다. `SubagentStop`은 `settings.json`에 **등록하지 않아** 애초에 후크가 안 불린다(스크립트의 `SubagentStop) exit 0`은 방어용 죽은 코드).
 - **루프 중 조기 완료 억제**는 `stop_hook_active` 가드로 한다.
 - **선택지 대기**는 진짜 사용자 결정(`elicitation_dialog`/`permission_prompt`)일 때만. **유휴(`idle_prompt`)는 별도 `입력 대기`** — 둘을 묶으면 자리를 비웠을 뿐인데 "선택지 대기"로 오표기된다.
+- **orchestration 워커 세션 묵음**: 환경변수 `OMC_TEAM_WORKER`(레거시 `OMX_TEAM_WORKER`)가 설정돼 있으면 status 판정 전에 발송하지 않는다 — 오케스트레이션(OMC 팀/autopilot 등)이 **워커 세션 환경에만** 주입하는 마커라, 워커가 별도 세션이라 페이로드가 메인과 같아도(`agent_id` 없음) 정확히 가려낸다. **메인/대화형 세션엔 이 변수가 없어 메인 완료 알림은 그대로 유지**된다.
 
 ## 3. status → 라벨 → 메시지
 
