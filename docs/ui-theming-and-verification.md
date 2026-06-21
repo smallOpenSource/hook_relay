@@ -117,6 +117,9 @@
 PWA 서비스워커가 셸(`/`)을 캐시한다. 사용자가 준 이미지가 **수정 이전 캡처**일 수 있으니
 파일 **mtime**과 **현재 서버 fresh 캡처**를 비교해 가른다. 구버전이면 **하드 리프레시(Ctrl+Shift+R)** 안내.
 
+### 함정 ⑥: 미인증 시 로그인 모달이 클릭을 가로챈다 · 127.0.0.1 인증서/SW
+playwright로 웹 UI를 열면 데이터 로드가 401 → **로그인 모달(`#login`)이 `.show`로 전체 화면**을 덮어, 다른 요소 클릭이 `intercepts pointer events`로 타임아웃난다. → **인증을 먼저** 한다: `sessionStorage['relay-webpw']=<암호>` 주입 후 `reload`(폴백: `#loginPw` 채우고 `#loginGo` 클릭). 암호는 env **READ만·미출력**. 또 **`127.0.0.1`로 접속하면 도메인 인증서 불일치 → 서비스워커(`/sw.js`) 스크립트 fetch가 `SSL certificate error` 콘솔 에러**를 낸다(앱 버그 아님). **실도메인으로 접속**하거나 그 메시지를 필터링해 판정한다.
+
 ---
 
 ## 5. 모달 탭 패턴 (재사용)
@@ -127,6 +130,8 @@ PWA 서비스워커가 셸(`/`)을 캐시한다. 사용자가 준 이미지가 *
 - 복사 버튼은 기존 `#guide` 클릭 위임(`.copy`)을 **재사용**(새 JS 0).
 - `setPlat`엔 `localStorage` 손상값 **whitelist 가드**(`'slack'|'telegram'|'discord'` 아니면 slack)로
   전 패널이 비는 사고를 막는다 — `setOS`도 같은 가드가 바람직.
+
+**채널 추가 모달**(`#addModal`/`#addForm` · `openAdd`/`closeAdd`): 신규 라우트 추가를 인라인 폼이 아니라 모달로 한다. 로그인·가이드와 **같은 `.modal`/`.modal-overlay` 인프라를 그대로 재사용**(추가 CSS는 `.modal .field` 간격뿐). 컨트롤바 `+ 새 라우트` 버튼으로 열고 **닫기 = submit 성공·취소·Esc·overlay(배경) 클릭**. 검증 메시지는 토스트(`#msg`)가 모달에 가리므로 **모달 내 `#addErr`** 에 띄운다. 입력 `#nApp/#nUser/#nChan`+`add()`는 기존 것을 모달로 옮긴 것.
 
 ---
 
