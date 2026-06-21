@@ -1332,6 +1332,11 @@ UI_HTML = r"""<!doctype html>
   .guide-head h3{font-family:var(--f-display); font-weight:800; font-size:25px; margin:3px 0 0; color:var(--ink); letter-spacing:-.01em}
   .guide-intro{font-family:var(--f-body); color:var(--muted); font-size:13.5px; line-height:1.6; margin:12px 0 16px}
   .guide-intro b{color:var(--ink)}
+  .guide-sample{font-family:var(--f-label); font-size:12.5px; line-height:1.7; color:var(--ink); background:var(--panel-2); border:1px solid var(--line-2); border-radius:10px; padding:14px 15px; margin:0 0 8px; white-space:pre-wrap; word-break:break-word}
+  [data-design="nothing"] .guide-sample{border-radius:4px}
+  .guide-sample .s-title{font-weight:700}
+  .guide-cap{font-family:var(--f-label); font-size:11.5px; color:var(--faint); line-height:1.65; letter-spacing:.02em; margin:0 0 16px}
+  .guide-cap b{color:var(--muted)}
   .guide-field{display:flex; align-items:center; gap:12px; margin:0 0 16px}
   .guide-field span{font-family:var(--f-label); font-size:11.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--faint); white-space:nowrap}
   .guide-field input{flex:1; max-width:240px}
@@ -1500,6 +1505,12 @@ UI_HTML = r"""<!doctype html>
       <button class="btn" id="guideClose" type="button">닫기</button>
     </div>
     <p class="guide-intro">내 Claude Code 작업 알림(작업완료·선택지대기·입력대기)을 Slack/Telegram/Discord로 받습니다. OS를 고르고 명령을 복사해 실행하세요. 알림이 가려면 아래 보드(또는 운영자)에 <b>내 username &#9656; 채널</b> 매핑이 있어야 합니다.</p>
+    <div class="guide-sample" aria-label="알림 표시 예시"><b class="s-title">[🆗 작업 완료] - my-project</b>
+- session:refactor-auth
+- path: /home/minsu/my-project
+- host:minsu-pc(minsu)
+- account:minsu</div>
+    <p class="guide-cap">첫 줄 = <b>[상태] - 프로젝트 폴더명</b> — 폴더명은 작업 경로에서 자동으로 뽑혀 Windows(<code>C:\&hellip;\my-project</code>)&middot;macOS&middot;Linux 어디서나 <code>my-project</code>로 표시됩니다. 상태: 🆗 작업 완료 / ❓ 선택지 대기 / ⏳ 입력 대기.</p>
     <label class="guide-field"><span>내 username</span><input id="guideUser" placeholder="minsu" autocomplete="off" spellcheck="false" aria-label="내 username"></label>
     <div class="os-tabs" role="tablist" aria-label="운영체제 선택">
       <button class="os-tab" type="button" data-os="win" role="tab">Windows</button>
