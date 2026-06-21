@@ -28,7 +28,20 @@
 
 ## 2. "메인 세션의 실제 상태만 보고" — 판정 트리
 
-`claude-notify.sh`의 `case "$event"`(부록 앵커):
+**한눈에 — 이벤트·조건 → `status` → 메시지 타이틀** (`Stop` 조건은 위→아래 먼저 맞는 것):
+
+| 후크 이벤트 | 추가 조건 | → `status` | 메시지 타이틀 |
+|---|---|---|---|
+| `Stop` | `agent_id`/`agent_type` 있음 (서브에이전트·팀원) | — | 🔇 무발송 |
+| `Stop` | `stop_hook_active=true` (자율 루프 진행중) | — | 🔇 무발송 |
+| `Stop` | 그 외 = 메인 세션 최종 종료 | `task_complete` | **[작업 완료]** |
+| `SubagentStop` | (항상) | — | 🔇 무발송 |
+| `Notification` | `elicitation_dialog` / `permission_prompt` | `awaiting_choice` | **[선택지 대기]** |
+| `Notification` | `idle_prompt` | `awaiting_input` | **[입력 대기]** |
+| `Notification` | 그 외(`auth_success` 등) | — | 🔇 무발송 |
+| 기타 이벤트 | — | — | 🔇 무발송 |
+
+발송되는 타이틀은 **[작업 완료] / [선택지 대기] / [입력 대기]** 3종뿐. 아래는 같은 트리의 주석 버전 — `claude-notify.sh`의 `case "$event"`(부록 앵커):
 
 ```
 Stop:
