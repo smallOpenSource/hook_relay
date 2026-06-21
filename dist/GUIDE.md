@@ -166,6 +166,7 @@ Invoke-RestMethod -Method Post -Uri http://relay.example.com:20000/notify -Conte
 | `NOTIFY_APP` | | `slack` | `slack` \| `telegram` \| `discord` |
 | `NOTIFY_USER` | | PC 사용자명 | `(app,username)→channel` 매핑 키. **매핑에 등록한 값과 동일하게** |
 | `NOTIFY_ACCOUNT` | | `~/.claude.json` 이메일 | 구독 계정 직접 지정(SSO 등으로 이메일이 비어있을 때) |
+| `NOTIFY_IDLE` | | `1`(발송) | `0`이면 유휴 **입력 대기**(idle) 알림만 끔(작업 완료·선택지 대기는 유지) |
 | `HOOK_PATH` | | OS별 기본 경로 | 후크 스크립트 위치를 바꿀 때만 |
 
 ---

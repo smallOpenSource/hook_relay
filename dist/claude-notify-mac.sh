@@ -14,6 +14,7 @@
 #   NOTIFY_DEBUG    (선택) =1 이면 후크 원본 JSON 을 NOTIFY_DEBUG_LOG 에 적재
 #                   (기본 ~/.claude/logs/notify-debug.jsonl). 묵음 이벤트도 기록.
 #   NOTIFY_DRYRUN   (선택) =1 이면 발송하지 않고 결정된 status 만 stdout 출력(테스트용).
+#   NOTIFY_IDLE     (선택) =0 이면 유휴 '입력 대기'(idle_prompt) 알림만 끔(완료·선택지 대기는 유지). 미설정=발송.
 
 set -euo pipefail
 
@@ -83,7 +84,11 @@ case "$event" in
   Notification)
     case "$ntype" in
       elicitation_dialog|permission_prompt) status="awaiting_choice" ;;
-      idle_prompt)                          status="awaiting_input" ;;
+      idle_prompt)
+        # 유휴 입력 대기: NOTIFY_IDLE=0 이면 끔 (완료·선택지 대기는 유지)
+        [[ "${NOTIFY_IDLE:-}" == "0" ]] && exit 0
+        status="awaiting_input"
+        ;;
       *)                                    exit 0 ;;
     esac
     ;;
