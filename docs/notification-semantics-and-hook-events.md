@@ -64,7 +64,7 @@ Notification:
 
 서버 `STATUS_LABEL`(app.py 앵커) 3종: `task_complete`=🆗 작업 완료 / `awaiting_choice`=❓ 선택지 대기 / `awaiting_input`=⏳ 입력 대기.
 본문은 `build_text`가 1회 생성(세 플랫폼 공유) — 포맷·회귀주의는 [`messenger-setup-and-verification.md`](messenger-setup-and-verification.md) §2.
-패치 스크립트는 `Notification` 매처에 세 종류(`idle_prompt|permission_prompt|elicitation_dialog`)를 등록한다(부록 앵커). **매처에 없는 종류는 후크 자체가 안 불린다.**
+패치 스크립트는 `Notification` 매처에 세 종류(`idle_prompt|permission_prompt|elicitation_dialog`)를 등록한다(부록 앵커). **매처에 없는 종류는 후크 자체가 안 불린다.** 유휴 핑이 불필요하면 `NOTIFY_IDLE=0`(env)으로 `idle_prompt`만 추가 묵음(완료·선택지 대기는 유지).
 
 ## 4. 진단 방법론 (근본 원인 찾기)
 
@@ -99,7 +99,7 @@ run '{"hook_event_name":"Notification","notification_type":"elicitation_dialog"}
 
 ### (c) 실이벤트 캡처 — `NOTIFY_DEBUG` / 임시 무조건 캡처
 - `NOTIFY_DEBUG=1`이면 원본 JSON을 `~/.claude/logs/notify-debug.jsonl`에 적재(부록 앵커).
-- ★**함정**: `settings.json`의 `.env`는 **세션 시작 시점에 로드**되므로, **이미 떠 있는 세션**의 후크엔 새 env가 안 닿는다. 실행 중 세션까지 즉시 캡처하려면 후크에 **무조건 적재 한 줄을 임시로** 넣었다 검증 후 제거한다(이벤트마다 후크가 새로 exec되므로 즉시 반영).
+- ★**즉시 캡처 팁**: 후크는 이벤트마다 새로 exec되므로, **무조건 적재 한 줄을 임시로** 넣으면 실행 중 세션의 다음 이벤트부터 바로 잡힌다(검증 후 제거). ※ 이번 세션 관찰: `settings.json`의 `.env`에 추가한 변수가 **실행 중 세션의 도구/후크 호출 env에 즉시 나타남**(매 호출 병합 추정) → "`.env`는 세션 시작 시 1회 로드"라는 이전 가정과 상충(버전 차이 가능). 캡처·env 토글 설계 시 한 번 실측할 것.
 
 #### 실측 결과 (대표 4건)
 | 세션 | 이벤트 | stop_hook_active | agent_id | 결과 |
@@ -121,12 +121,48 @@ run '{"hook_event_name":"Notification","notification_type":"elicitation_dialog"}
 
 거짓 완료 제거를 우선해 **Option A(현행 유지)** 로 확정했다. "루프 끝 1회 핑"이 필요하면 향후 **Option B(디바운스)**: 루프 stop들을 모아 세션이 조용해진 뒤 1회만 보낸다 — 단 async 후크 수명·지연 이슈가 있어 보류.
 
-## 7. 재사용 교훈
+## 7. orchestration 세션이 "메인과 동일"하다는 함정 — OMC-상태로 판별
+
+후속 신고: 사용자가 ralph/autopilot으로 **orchestration이 돌리는 세션**의 완료·대기 알림을 노이즈로 받았다. 끄려는 "자명한" 시도가 전부 틀렸는데 — **그 세션이 후크 입장에서 메인 세션과 구별이 안 되기 때문**이다.
+
+### 7.1 캡처가 증명한 "동일성"
+라이브 후크에 **env+payload 1회용 캡처**(§7.3)를 달아 노이즈 세션(ralph 루프)과 사용자 메인 세션을 나란히 찍으니, 후크가 보는 모든 필드가 같았다:
+
+| 필드 | orchestration(ralph) | 사용자 메인 |
+|---|---|---|
+| `CLAUDE_CODE_ENTRYPOINT` | `cli` | `cli` |
+| `CLAUDE_CODE_CHILD_SESSION` / `…AGENT_TEAMS` | `1` / `1` | `1` / `1` |
+| `agent_id` / `stop_hook_active` | 없음 / `false` | 없음 / `false` |
+| `claude_account` | 사용자 본인 | 같은 사용자 본인 |
+| **유일한 차이** | **`session_id` · `cwd`** | |
+
+⇒ **이름·계정·entrypoint·agent_id 어느 것도 판별자가 못 된다.** 실제로 시도→폐기한 우회들:
+- **세션이름(UUID)**: UUID는 "서브"가 아니라 `/rename` 안 한 세션일 뿐. 끄면 *이름 없는 메인 완료*까지 죽어 거부됨("메인 완료는 알아야 한다") → 되돌림.
+- **계정**: 워커가 다른 계정으로 돌아도 **다 사용자 본인 계정** → 본인 세션 죽이는 우회. 거부.
+- **`CLAUDE_CODE_ENTRYPOINT`/`CHILD_SESSION`**: 메인도 `cli`/`1` → 판별 불가.
+
+### 7.2 진짜 판별자 = OMC 자체 상태
+구별하는 건 **OMC 자신뿐**이다:
+- **in-session orchestration**(ralph/autopilot 등): `.omc/state/sessions/<session_id>/`에 **활성 모드 상태파일**(`ralph-state.json`·`autopilot-state.json`·…·`boulder.json`)이 생긴다. 후크가 `cwd`에서 위로 올라가 `.omc`를 찾고 그 세션 폴더에 활성 모드 파일이 있으면 묵음. 직접 띄운 세션엔 없다.
+- **spawn 워커**(team/swarm): 환경에 **`OMC_TEAM_WORKER`**(레거시 `OMX_TEAM_WORKER`)가 박혀 온다(OMC 소스 `src/team/model-contract.ts` 등이 주입; OMC 자체 후크 `team-worker-hook.ts`도 이걸로 워커 가려냄).
+
+**계층(위→아래, 먼저 맞으면 묵음)**: ① `agent_id`/`agent_type` → ② `stop_hook_active` → ③ `OMC_TEAM_WORKER` env → ④ `.omc` 활성 모드 상태파일 → status 매핑 → ⑤ `NOTIFY_IDLE=0`이면 `idle_prompt` 추가 묵음.
+
+> ★ **project-local 가정**: 이 셋업은 중앙 저장(`OMC_STATE_DIR`) 미사용이라 상태가 `<repo>/.omc/state/`에 있다. 중앙 저장을 쓰면 경로가 해시되니 해석을 확장해야 한다.
+> ★ **잔여**: 프로젝트 `.omc` 상태가 없는 **headless `claude -p` 스폰**(예: `/tmp`의 일회성 워커)은 ②③④에 안 걸려 샐 수 있다 — 재발 시 그 세션 1건을 §7.3으로 캡처해 신호를 추가한다.
+
+### 7.3 방법론 — "동일성"을 깨는 캡처·검증
+1. **env까지 캡처(1회용)**: `NOTIFY_DEBUG`는 payload(JSON)만 적재한다. 구별자가 env에 있을 수 있으니 후크에 **임시로** 한 줄(`printf 'ep=%s child=%s … cwd=%s' "$CLAUDE_CODE_ENTRYPOINT" … >> /tmp/hr-capture.jsonl`)을 넣어 **env까지** 찍는다. 노이즈 1건 + 메인 1건을 비교 → §7.1 표를 얻고 "동일"을 확정. 검증 후 그 줄 제거.
+2. **실(real) `.omc` 상태로 DRYRUN**: 합성 JSON이 아니라 **디스크의 실제 상태**에 대고 판정한다 — `NOTIFY_DRYRUN=1`에 노이즈/메인 세션의 `{session_id, cwd}`를 주면 후크가 실제 `.omc/state/sessions/<id>/`를 보고 묵음/발송을 결정(커밋 전 노이즈=묵음·메인=발송 확인).
+3. **OMC 소스 grep**: env 마커·spawn 방식은 추측 말고 소스에서 — `grep -rho 'OMC_[A-Z_]\+'`(마커 후보), `claude.*-p|CLAUDE_CODE_ENTRYPOINT`(OMC는 워커를 **headless `claude -p`**로 띄우며 커스텀 entrypoint를 박음).
+
+## 8. 재사용 교훈
 
 - **죽은 코드 주의**: 스크립트가 `SubagentStop`을 처리해도 `settings.json`에 매처/이벤트를 **등록하지 않으면 영영 안 불린다**. 분기 추가 ≠ 활성화.
 - **이벤트로 메인/서브 구분**: `Stop`+`agent_id` 또는 `SubagentStop`이 "메인 아님"의 신호. 팀(`AGENT_TEAMS`) 사용 시 특히 중요.
 - **`bypassPermissions` 환경**에선 `permission_prompt`가 거의 안 뜬다 → 실질적 "선택지 대기"의 대부분은 `elicitation_dialog`다.
-- **`settings.json` `.env`는 세션 시작 시 로드** — 실행 중 세션엔 후크 env 변경이 즉시 반영되지 않는다(검증 캡처 설계 시 고려).
+- **orchestration 세션 ≈ 메인 세션** — ralph/autopilot이 돌리는 세션은 후크가 보는 페이로드·env가 메인과 같다(이름·계정·entrypoint·agent_id 동일). 구별은 **OMC 자체 상태**(`.omc` 모드 상태파일 / `OMC_TEAM_WORKER` env)로만 된다(§7). 캡처는 env까지, 검증은 **실 상태로**.
+- **`settings.json` `.env` 반영 시점은 실측으로** — 이번 세션에선 추가한 settings.env 변수가 **실행 중 세션의 도구/후크 호출에 즉시** 나타났다(매 호출 병합 추정). "세션 시작 시 1회 로드"로 단정 말 것(버전 차이 가능).
 - **서버는 순수 릴레이** — 분류 로직은 전부 클라이언트 후크에 둔다(서버 무상태·플랫폼 무관 유지).
 
 ---
@@ -137,6 +173,7 @@ run '{"hook_event_name":"Notification","notification_type":"elicitation_dialog"}
 |---|---|---|
 | `case "$event"` · `agent_id` · `stop_active` · `ntype` | `dist/claude-notify.sh` (~51 / ~31 / ~33 / ~34) | 판정 트리 + 분류 입력 |
 | `NOTIFY_DRYRUN` · `NOTIFY_DEBUG` | `dist/claude-notify.sh` (~99 / ~36) | 무발송 테스트 · 원본 캡처 게이트 |
+| `OMC_TEAM_WORKER`/`OMX_` env · `.omc/state/sessions/<id>/*-state.json` walk-up · `NOTIFY_IDLE` | `dist/claude-notify.sh` (상태 매핑 직전 / `idle_prompt` 분기) | orchestration 세션·유휴 묵음 가드(§7) |
 | `matcher: "idle_prompt\|permission_prompt\|elicitation_dialog"` | `dist/patch-claude-config.sh` (~48) | Notification 종류 등록 |
 | `STATUS_LABEL` · `build_text` | `app.py` (~35 / ~230) | status→라벨 · 본문 1회 생성 |
 | 상태 매핑 표 | `dist/README.md` | 이벤트→조건→status→표시 요약 |
