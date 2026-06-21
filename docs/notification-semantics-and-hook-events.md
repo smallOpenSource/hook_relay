@@ -34,14 +34,14 @@
 |---|---|---|---|
 | `Stop` | `agent_id`/`agent_type` 있음 (서브에이전트·팀원) | — | 🔇 무발송 |
 | `Stop` | `stop_hook_active=true` (자율 루프 진행중) | — | 🔇 무발송 |
-| `Stop` | 그 외 = 메인 세션 최종 종료 | `task_complete` | **[작업 완료]** |
+| `Stop` | 그 외 = 메인 세션 최종 종료 | `task_complete` | **[✅ 작업 완료]** |
 | `SubagentStop` | (항상) | — | 🔇 무발송 |
-| `Notification` | `elicitation_dialog` / `permission_prompt` | `awaiting_choice` | **[선택지 대기]** |
-| `Notification` | `idle_prompt` | `awaiting_input` | **[입력 대기]** |
+| `Notification` | `elicitation_dialog` / `permission_prompt` | `awaiting_choice` | **[❓ 선택지 대기]** |
+| `Notification` | `idle_prompt` | `awaiting_input` | **[⌨️ 입력 대기]** |
 | `Notification` | 그 외(`auth_success` 등) | — | 🔇 무발송 |
 | 기타 이벤트 | — | — | 🔇 무발송 |
 
-발송되는 타이틀은 **[작업 완료] / [선택지 대기] / [입력 대기]** 3종뿐. 아래는 같은 트리의 주석 버전 — `claude-notify.sh`의 `case "$event"`(부록 앵커):
+발송되는 타이틀은 **[✅ 작업 완료] / [❓ 선택지 대기] / [⌨️ 입력 대기]** 3종뿐. 아래는 같은 트리의 주석 버전 — `claude-notify.sh`의 `case "$event"`(부록 앵커):
 
 ```
 Stop:
@@ -61,7 +61,7 @@ Notification:
 
 ## 3. status → 라벨 → 메시지
 
-서버 `STATUS_LABEL`(app.py 앵커) 3종: `task_complete`=작업 완료 / `awaiting_choice`=선택지 대기 / `awaiting_input`=입력 대기.
+서버 `STATUS_LABEL`(app.py 앵커) 3종: `task_complete`=✅ 작업 완료 / `awaiting_choice`=❓ 선택지 대기 / `awaiting_input`=⌨️ 입력 대기.
 본문은 `build_text`가 1회 생성(세 플랫폼 공유) — 포맷·회귀주의는 [`messenger-setup-and-verification.md`](messenger-setup-and-verification.md) §2.
 패치 스크립트는 `Notification` 매처에 세 종류(`idle_prompt|permission_prompt|elicitation_dialog`)를 등록한다(부록 앵커). **매처에 없는 종류는 후크 자체가 안 불린다.**
 

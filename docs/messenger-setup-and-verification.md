@@ -31,7 +31,7 @@
 현재 포맷:
 
 ```
-[<상태>]                     ← STATUS_LABEL: task_complete=작업 완료 / awaiting_choice=선택지 대기 / awaiting_input=입력 대기
+[<상태>]                     ← STATUS_LABEL: task_complete=✅ 작업 완료 / awaiting_choice=❓ 선택지 대기 / awaiting_input=⌨️ 입력 대기
 - session:<세션명>            ← /rename 값(클라 후크가 transcript의 "Session renamed to:" system 항목에서 추출)
 - path: <project_path>
 - host:<hostname>(<username>)
@@ -141,7 +141,7 @@ PY
 
 | 심볼 | app.py 위치(약) | 역할 |
 |---|---|---|
-| `APPS` / `STATUS_LABEL` | 33 / 35 | 플랫폼 화이트리스트 · 상태 라벨(작업 완료/선택지 대기/입력 대기) |
+| `APPS` / `STATUS_LABEL` | 33 / 35 | 플랫폼 화이트리스트 · 상태 라벨(✅ 작업 완료/❓ 선택지 대기/⌨️ 입력 대기) |
 | `lookup_channel` | 160 | `channels.csv` `(app,username)→channel` 조회 |
 | `send_slack` / `send_telegram` / `send_discord` | 179 / 195 / 210 | 플랫폼 전송(Bearer / `bot<token>` URL / `Bot ` 헤더) |
 | `SENDERS` | 223 | `app → sender` 매핑 |

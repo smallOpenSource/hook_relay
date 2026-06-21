@@ -139,12 +139,12 @@ NOTIFY_API_URL='http://<서버>:20000' NOTIFY_APP='slack' NOTIFY_USER='minsu' ba
 
 | 후크 이벤트 | 조건 | 상태 | 표시 |
 |-------------|------|------|------|
-| `Stop` | 메인 세션 최종 완료(아래 제외) | `task_complete` | 작업 완료 |
+| `Stop` | 메인 세션 최종 완료(아래 제외) | `task_complete` | ✅ 작업 완료 |
 | `Stop` | `agent_id` 있음(서브에이전트·팀원) | — | (발송 안 함) |
 | `Stop` | `stop_hook_active=true`(자율 루프 진행 중) | — | (발송 안 함) |
 | `SubagentStop` | 서브에이전트 완료 | — | (발송 안 함) |
-| `Notification` | `elicitation_dialog`·`permission_prompt`(사용자 결정 대기) | `awaiting_choice` | 선택지 대기 |
-| `Notification` | `idle_prompt`(유휴) | `awaiting_input` | 입력 대기 |
+| `Notification` | `elicitation_dialog`·`permission_prompt`(사용자 결정 대기) | `awaiting_choice` | ❓ 선택지 대기 |
+| `Notification` | `idle_prompt`(유휴) | `awaiting_input` | ⌨️ 입력 대기 |
 
 > 서브에이전트/팀원 완료와 자율 루프(autopilot/ralph 등) 중간 `Stop`은 **메인 세션의 완료가 아니므로 보내지 않는다**. 유휴(`idle_prompt`)는 "입력 대기", 실제 사용자 결정 대기(plan 승인·권한 `elicitation_dialog`/`permission_prompt`)는 "선택지 대기"로 구분된다.
 
