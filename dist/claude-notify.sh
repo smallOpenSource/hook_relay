@@ -84,6 +84,9 @@ if [[ -z "$session_name" ]]; then
 fi
 [[ -z "$session_name" ]] && session_name="$session_id"
 
+# -- /rename 안 한 세션(이름=session_id UUID)은 발송하지 않음 (사용자 정책) --
+[[ "$session_name" == "$session_id" ]] && exit 0
+
 # -- 구독 계정 (override 우선, 없으면 ~/.claude.json) --
 account="${NOTIFY_ACCOUNT:-}"
 if [[ -z "$account" && -f "$HOME/.claude.json" ]]; then

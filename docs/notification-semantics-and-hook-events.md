@@ -41,7 +41,7 @@
 | `Notification` | 그 외(`auth_success` 등) | — | 🔇 무발송 |
 | 기타 이벤트 | — | — | 🔇 무발송 |
 
-발송되는 타이틀은 **[🆗 작업 완료] / [❓ 선택지 대기] / [⏳ 입력 대기]** 3종뿐. 아래는 같은 트리의 주석 버전 — `claude-notify.sh`의 `case "$event"`(부록 앵커):
+발송되는 타이틀은 **[🆗 작업 완료] / [❓ 선택지 대기] / [⏳ 입력 대기]** 3종뿐. ＋ **`/rename` 안 한 세션(이름=`session_id` UUID)은 status 무관 묵음**(사용자 정책 — 발송 직전 가드). 아래는 같은 트리의 주석 버전 — `claude-notify.sh`의 `case "$event"`(부록 앵커):
 
 ```
 Stop:
@@ -58,6 +58,7 @@ Notification:
 - **서브/팀원 억제**는 `agent_id` 가드로 한다. `SubagentStop`은 `settings.json`에 **등록하지 않아** 애초에 후크가 안 불린다(스크립트의 `SubagentStop) exit 0`은 방어용 죽은 코드).
 - **루프 중 조기 완료 억제**는 `stop_hook_active` 가드로 한다.
 - **선택지 대기**는 진짜 사용자 결정(`elicitation_dialog`/`permission_prompt`)일 때만. **유휴(`idle_prompt`)는 별도 `입력 대기`** — 둘을 묶으면 자리를 비웠을 뿐인데 "선택지 대기"로 오표기된다.
+- **이름 없는 세션 묵음(사용자 정책)**: status가 정해져도, `session_name`이 `/rename`·캐시 없이 `session_id`(UUID)로 폴백한 세션은 **status 무관 발송하지 않는다** — 세션이름 폴백 직후 `[[ "$session_name" == "$session_id" ]] && exit 0`(ps1: `if ($sessionName -eq $sessionId) { exit 0 }`). ⇒ `/rename`으로 이름 붙인 세션만 알림이 온다. (이름 없는 세션의 `선택지/입력 대기`도 함께 묵음됨에 유의 — 완료만 거르려면 가드를 `task_complete`로 한정.)
 
 ## 3. status → 라벨 → 메시지
 

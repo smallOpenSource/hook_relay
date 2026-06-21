@@ -83,6 +83,9 @@ if (-not $sessionName -and $cwd) {
 }
 if (-not $sessionName) { $sessionName = $sessionId }
 
+# -- /rename 안 한 세션(이름=sessionId UUID)은 발송하지 않음 (사용자 정책) --
+if ($sessionName -eq $sessionId) { exit 0 }
+
 # -- 구독 계정 --
 $account = $env:NOTIFY_ACCOUNT
 if ([string]::IsNullOrEmpty($account)) {
