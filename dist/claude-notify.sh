@@ -44,6 +44,25 @@ fi
 #    OMC가 워커 세션 환경에만 OMC_TEAM_WORKER 를 주입한다. 메인/대화형 세션엔 없으므로 메인 완료는 영향 없음.
 [[ -n "${OMC_TEAM_WORKER:-}${OMX_TEAM_WORKER:-}" ]] && exit 0
 
+# -- OMC orchestration 세션(ralph/autopilot 등 자율 루프)은 사용자에게 알리지 않음 --
+#    이런 세션은 페이로드·env가 메인과 동일(ep=cli·agent_id 없음)하지만, cwd 위쪽
+#    .omc/state/sessions/<session_id>/ 에 활성 모드 상태파일(ralph-state.json 등)을 갖는다.
+#    그게 있으면 orchestration 중 → 묵음. 직접 띄운 메인 세션엔 없어 메인 완료/대기는 그대로 발송.
+if [[ -n "$session_id" ]]; then
+  _d="$cwd"
+  while [[ -n "$_d" && "$_d" != "/" ]]; do
+    if [[ -d "$_d/.omc" ]]; then
+      _s="$_d/.omc/state/sessions/$session_id"
+      for _m in ralph autopilot ultrawork ultrapilot pipeline autoresearch self-improve ultraqa team omc-teams; do
+        [[ -f "$_s/${_m}-state.json" ]] && exit 0
+      done
+      [[ -f "$_s/boulder.json" ]] && exit 0
+      break
+    fi
+    _d="$(dirname "$_d")"
+  done
+fi
+
 # -- 상태 매핑: "메인 세션의 실제 상태"만 보고 --
 #   Stop         : 메인 세션 최종 완료만 알림
 #                  · agent_id/agent_type 있음(서브에이전트·팀원) → 묵음 (메인 아님)

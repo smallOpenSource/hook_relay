@@ -45,6 +45,27 @@ if ($env:NOTIFY_DEBUG -eq '1') {
 # -- OMC 팀 워커 세션(orchestration 내부 워커)은 사용자에게 알리지 않음 (메인 완료엔 영향 없음) --
 if ($env:OMC_TEAM_WORKER -or $env:OMX_TEAM_WORKER) { exit 0 }
 
+# -- OMC orchestration 세션(ralph/autopilot 등)은 사용자에게 알리지 않음 --
+#    cwd 위쪽 .omc/state/sessions/<sessionId>/ 에 활성 모드 상태파일이 있으면 orchestration 중 → 묵음.
+if ($sessionId) {
+  $d = $cwd
+  while ($d) {
+    if (Test-Path (Join-Path $d '.omc')) {
+      $sdir = Join-Path (Join-Path (Join-Path (Join-Path $d '.omc') 'state') 'sessions') $sessionId
+      $hit = $false
+      foreach ($m in @('ralph','autopilot','ultrawork','ultrapilot','pipeline','autoresearch','self-improve','ultraqa','team','omc-teams')) {
+        if (Test-Path (Join-Path $sdir "$m-state.json")) { $hit = $true; break }
+      }
+      if (-not $hit -and (Test-Path (Join-Path $sdir 'boulder.json'))) { $hit = $true }
+      if ($hit) { exit 0 }
+      break
+    }
+    $parent = Split-Path $d -Parent
+    if (-not $parent -or $parent -eq $d) { break }
+    $d = $parent
+  }
+}
+
 # -- 상태 매핑: "메인 세션의 실제 상태"만 보고 --
 #   Stop         : 메인 세션 최종 완료만 알림 (agent_id/agent_type 있으면 서브·팀원 → 묵음,
 #                  stop_hook_active=true 면 자율 루프 진행중 → 묵음)
