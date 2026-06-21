@@ -227,12 +227,20 @@ def send_discord(channel, text):
 SENDERS = {"slack": send_slack, "telegram": send_telegram, "discord": send_discord}
 
 
+def _path_leaf(p):
+    # cwd가 Windows(\) · POSIX(/) 어느 구분자로 와도 마지막 경로 컴포넌트만 추출.
+    s = str(p or "").replace("\\", "/").rstrip("/")
+    return s.rsplit("/", 1)[-1] if s else ""
+
+
 def build_text(p):
     status = STATUS_LABEL.get(p.get("status", ""), p.get("status", ""))
     account = str(p.get("claude_account", "")).split("@")[0]
+    leaf = _path_leaf(p.get("project_path", ""))
+    head = "[{}] - {}".format(status, leaf) if leaf else "[{}]".format(status)
     return "\n".join(
         [
-            "[{}]".format(status),
+            head,
             "- session:" + str(p.get("session_name", "")),
             "- path: " + str(p.get("project_path", "")),
             "- host:{}({})".format(p.get("hostname", ""), p.get("username", "")),

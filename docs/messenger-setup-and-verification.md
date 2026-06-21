@@ -31,7 +31,7 @@
 현재 포맷:
 
 ```
-[<상태>]                     ← STATUS_LABEL: task_complete=🆗 작업 완료 / awaiting_choice=❓ 선택지 대기 / awaiting_input=⏳ 입력 대기
+[<상태>] - <leaf>            ← <상태>=STATUS_LABEL: task_complete=🆗 작업 완료 / awaiting_choice=❓ 선택지 대기 / awaiting_input=⏳ 입력 대기.  <leaf>=project_path의 마지막 경로 컴포넌트(구분자 무관: Windows \ · POSIX /; app.py _path_leaf). project_path 비면 " - <leaf>" 생략
 - session:<세션명>            ← /rename 값(클라 후크가 transcript의 "Session renamed to:" system 항목에서 추출)
 - path: <project_path>
 - host:<hostname>(<username>)
@@ -145,6 +145,6 @@ PY
 | `lookup_channel` | 160 | `channels.csv` `(app,username)→channel` 조회 |
 | `send_slack` / `send_telegram` / `send_discord` | 179 / 195 / 210 | 플랫폼 전송(Bearer / `bot<token>` URL / `Bot ` 헤더) |
 | `SENDERS` | 223 | `app → sender` 매핑 |
-| `build_text` | 226 | 본문 1회 생성 → 세 sender 공유 |
+| `_path_leaf` · `build_text` | 230 / 236 | 경로 leaf 추출(구분자 무관) · 본문 1회 생성 → 세 sender 공유 |
 | `notify` | 247 | `/notify` 핸들러(라우팅 + 발송) |
 | `*_BOT_TOKEN` / `*_API_BASE` | 19–27 | env 토큰 · 플랫폼 API base |

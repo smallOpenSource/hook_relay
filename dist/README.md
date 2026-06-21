@@ -148,4 +148,6 @@ NOTIFY_API_URL='http://<서버>:20000' NOTIFY_APP='slack' NOTIFY_USER='minsu' ba
 
 > 서브에이전트/팀원 완료와 자율 루프(autopilot/ralph 등) 중간 `Stop`은 **메인 세션의 완료가 아니므로 보내지 않는다**. 유휴(`idle_prompt`)는 "입력 대기", 실제 사용자 결정 대기(plan 승인·권한 `elicitation_dialog`/`permission_prompt`)는 "선택지 대기"로 구분된다. 또한 **OMC 오케스트레이션(ralph/autopilot 등)이 돌리는 세션은 발송하지 않는다** — 워커 env `OMC_TEAM_WORKER`(레거시 `OMX_`) 또는 `cwd` 위쪽 `.omc/state/sessions/<id>/`의 활성 모드 상태파일(`ralph-state.json` 등)로 판별. 직접 띄운 메인 세션엔 없어 메인 완료/대기엔 영향 없음.
 
+> **메시지 첫 줄**: 위 "표시" 라벨 뒤에 프로젝트 경로의 leaf를 붙여 `[{라벨}] - {leaf}` 형태로 보낸다(예: `[🆗 작업 완료] - hook_relay`). `{leaf}` = `project_path`의 마지막 경로 컴포넌트로 **OS 경로 구분자 무관**(Windows `\` · POSIX `/` 모두 처리)하게 뽑는다. `project_path`가 비면 라벨만. 본문 `- path:`엔 풀경로가 그대로 남는다.
+
 > **세션 이름**: 후크는 `transcript_path` 에서 `/rename` 으로 지정한 세션 이름을 추출해 `session: <이름>` 으로 전송한다(없으면 세션 ID 사용).

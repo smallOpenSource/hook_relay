@@ -41,7 +41,7 @@
 | `Notification` | 그 외(`auth_success` 등) | — | 🔇 무발송 |
 | 기타 이벤트 | — | — | 🔇 무발송 |
 
-발송되는 타이틀은 **[🆗 작업 완료] / [❓ 선택지 대기] / [⏳ 입력 대기]** 3종뿐. 아래는 같은 트리의 주석 버전 — `claude-notify.sh`의 `case "$event"`(부록 앵커):
+발송되는 타이틀(라벨)은 **[🆗 작업 완료] / [❓ 선택지 대기] / [⏳ 입력 대기]** 3종뿐 — 단 **실제 메시지 첫 줄은 여기에 경로 leaf를 붙인 `[{타이틀}] - {leaf}`**(§3). 아래는 같은 트리의 주석 버전 — `claude-notify.sh`의 `case "$event"`(부록 앵커):
 
 ```
 Stop:
@@ -63,7 +63,7 @@ Notification:
 ## 3. status → 라벨 → 메시지
 
 서버 `STATUS_LABEL`(app.py 앵커) 3종: `task_complete`=🆗 작업 완료 / `awaiting_choice`=❓ 선택지 대기 / `awaiting_input`=⏳ 입력 대기.
-본문은 `build_text`가 1회 생성(세 플랫폼 공유) — 포맷·회귀주의는 [`messenger-setup-and-verification.md`](messenger-setup-and-verification.md) §2.
+**발송 메시지 첫 줄 = `[{라벨}] - {leaf}`** (예: `[🆗 작업 완료] - hook_relay`). `{leaf}`는 `project_path`의 마지막 경로 컴포넌트로 **OS 구분자 무관**(Windows `\` · POSIX `/` 모두 처리 — 서버 `_path_leaf`, app.py 앵커)하게 뽑으며, `project_path`가 비면 라벨만 둔다(예: `[🆗 작업 완료]`). 본문은 `build_text`가 1회 생성(세 플랫폼 공유)하고 `- path:`엔 풀경로를 유지 — 포맷·회귀주의는 [`messenger-setup-and-verification.md`](messenger-setup-and-verification.md) §2.
 패치 스크립트는 `Notification` 매처에 세 종류(`idle_prompt|permission_prompt|elicitation_dialog`)를 등록한다(부록 앵커). **매처에 없는 종류는 후크 자체가 안 불린다.** 유휴 핑이 불필요하면 `NOTIFY_IDLE=0`(env)으로 `idle_prompt`만 추가 묵음(완료·선택지 대기는 유지).
 
 ## 4. 진단 방법론 (근본 원인 찾기)
@@ -175,5 +175,5 @@ run '{"hook_event_name":"Notification","notification_type":"elicitation_dialog"}
 | `NOTIFY_DRYRUN` · `NOTIFY_DEBUG` | `dist/claude-notify.sh` (~99 / ~36) | 무발송 테스트 · 원본 캡처 게이트 |
 | `OMC_TEAM_WORKER`/`OMX_` env · `.omc/state/sessions/<id>/*-state.json` walk-up · `NOTIFY_IDLE` | `dist/claude-notify.sh` (상태 매핑 직전 / `idle_prompt` 분기) | orchestration 세션·유휴 묵음 가드(§7) |
 | `matcher: "idle_prompt\|permission_prompt\|elicitation_dialog"` | `dist/patch-claude-config.sh` (~48) | Notification 종류 등록 |
-| `STATUS_LABEL` · `build_text` | `app.py` (~35 / ~230) | status→라벨 · 본문 1회 생성 |
+| `STATUS_LABEL` · `_path_leaf` · `build_text` | `app.py` (~35 / ~230 / ~236) | status→라벨 · 경로 leaf 추출(구분자 무관) · 본문 1회 생성 |
 | 상태 매핑 표 | `dist/README.md` | 이벤트→조건→status→표시 요약 |
