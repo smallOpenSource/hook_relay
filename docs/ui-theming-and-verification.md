@@ -120,6 +120,9 @@ PWA 서비스워커가 셸(`/`)을 캐시한다. 사용자가 준 이미지가 *
 ### 함정 ⑥: 미인증 시 로그인 모달이 클릭을 가로챈다 · 127.0.0.1 인증서/SW
 playwright로 웹 UI를 열면 데이터 로드가 401 → **로그인 모달(`#login`)이 `.show`로 전체 화면**을 덮어, 다른 요소 클릭이 `intercepts pointer events`로 타임아웃난다. → **인증을 먼저** 한다: `sessionStorage['relay-webpw']=<암호>` 주입 후 `reload`(폴백: `#loginPw` 채우고 `#loginGo` 클릭). 암호는 env **READ만·미출력**. 또 **`127.0.0.1`로 접속하면 도메인 인증서 불일치 → 서비스워커(`/sw.js`) 스크립트 fetch가 `SSL certificate error` 콘솔 에러**를 낸다(앱 버그 아님). **실도메인으로 접속**하거나 그 메시지를 필터링해 판정한다.
 
+### 함정 ⑦: 이모지는 **리터럴**로 · 헤드리스엔 컬러 이모지 폰트가 없다
+UI에 상태 이모지(🆗/❓/⏳)를 넣을 땐 **숫자 HTML 엔티티 대신 리터럴 이모지**(소스가 UTF-8, `STATUS_LABEL`과 동일)를 써라 — 코드포인트를 손으로 적으면 틀린다(🆗 = U+1F197 = `&#127383;`인데 `&#128505;`는 😹다). 또 **headless Chromium(playwright)엔 컬러 이모지 폰트가 없어 🆗/❓/⏳가 □(tofu)로 찍힌다** — 렌더 아티팩트이지 버그가 아니다. **서빙 바이트**는 `curl … | grep -c '🆗 작업 완료'`로 따로 확인해 가른다.
+
 ---
 
 ## 5. 모달 탭 패턴 (재사용)
@@ -132,6 +135,8 @@ playwright로 웹 UI를 열면 데이터 로드가 401 → **로그인 모달(`#
   전 패널이 비는 사고를 막는다 — `setOS`도 같은 가드가 바람직.
 
 **채널 추가 모달**(`#addModal`/`#addForm` · `openAdd`/`closeAdd`): 신규 라우트 추가를 인라인 폼이 아니라 모달로 한다. 로그인·가이드와 **같은 `.modal`/`.modal-overlay` 인프라를 그대로 재사용**(추가 CSS는 `.modal .field` 간격뿐). 컨트롤바 `+ 새 라우트` 버튼으로 열고 **닫기 = submit 성공·취소·Esc·overlay(배경) 클릭**. 검증 메시지는 토스트(`#msg`)가 모달에 가리므로 **모달 내 `#addErr`** 에 띄운다. 입력 `#nApp/#nUser/#nChan`+`add()`는 기존 것을 모달로 옮긴 것.
+
+**새 "코드/메시지 박스" 블록 = `.code pre` 변수 미러**: 가이드의 알림 미리보기(`.guide-sample`/`.guide-cap`)처럼 박스형 블록을 새로 넣을 땐 **기존 `.code pre`의 CSS 변수를 그대로 미러**(`background:var(--panel-2)`·`border:var(--line-2)`·`color:var(--ink)`·`font-family:var(--f-label)`)하면 **16테마×light/dark 자동 안전**(검증된 대비를 상속 — 새 색·배경을 도입하면 §2 픽셀 대비 재감사가 필요해진다). 줄은 `white-space:pre-wrap`로 보존하되 긴 경로는 `word-break:break-word`로 래핑. 본문이 **실제 발송 포맷을 흉내** 낼 땐 `build_text`와 **간격까지 일치**(예: `- session:`·`- host:`·`- account:`는 콜론 뒤 공백 없음, `- path: ` 만 공백)시키고 **placeholder 값만**(실 계정·호스트·도메인 금지) 쓴다.
 
 ---
 
@@ -146,3 +151,4 @@ playwright로 웹 UI를 열면 데이터 로드가 401 → **로그인 모달(`#
 | `setTheme` / `#themeBtn` | ~1561 / ~1418 | 테마 토글(텍스트 dark↔light) — **검증 시 실제 클릭** |
 | `@media(max-width:1000px)` | ~1368 | 좁은 폭 브랜드 압축(태그라인 숨김 + 마크 min cap) |
 | `setOS`/`setPlat`, `.os-tab`/`.tok-tab` | ~1690 부근 | 모달 탭(독립 클래스·data 분리) |
+| `.guide-sample`/`.guide-cap` | CSS ~1335 / HTML ~1508 | 가이드 알림 미리보기 박스(`.code pre` 변수 미러·placeholder만) |
